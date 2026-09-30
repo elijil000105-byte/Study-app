@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="sv" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StudyAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Hoppa till innehåll</a>
+  <div id="loader" class="loader" role="status" aria-label="Laddar StudyAI"><div class="ring"></div><p>StudyAI</p></div>
+  <div id="login" class="login" role="dialog" aria-modal="true" aria-labelledby="loginTitle" hidden>
+    <form class="glass" id="loginForm" novalidate>
+      <div class="logo"><i class="fa-solid fa-brain"></i><span>StudyAI</span></div>
+      <h2 id="loginTitle">Välj profil eller skapa en ny</h2>
+      <div id="profiles" class="chips"></div>
+      <label for="uName">Användarnamn</label><input id="uName" autocomplete="username" maxlength="20" required>
+      <label for="uPin">PIN-kod (4–8 siffror)</label><input id="uPin" type="password" inputmode="numeric" autocomplete="current-password" required>
+      <p id="loginMsg" class="muted err" role="alert"></p>
+      <button class="btn">Fortsätt</button>
+      <p class="muted">Profiler sparas lokalt i den här webbläsaren. PIN-koden skyddar inte mot den som har tillgång till enheten.</p>
+    </form>
+  </div>
+  <div class="blob b1"></div><div class="blob b2"></div>
+
+  <!-- Sidonavigation -->
+  <aside class="sidebar glass">
+    <div class="logo"><i class="fa-solid fa-brain"></i><span>StudyAI</span></div>
+    <nav>
+      <button class="nav-btn active" data-view="dashboard"><i class="fa-solid fa-chart-pie"></i><span>Dashboard</span></button>
+      <button class="nav-btn" data-view="flashcards"><i class="fa-solid fa-clone"></i><span>Kort</span></button>
+      <button class="nav-btn" data-view="quiz"><i class="fa-solid fa-circle-question"></i><span>Quiz</span></button>
+      <button class="nav-btn" data-view="notes"><i class="fa-solid fa-note-sticky"></i><span>Anteckningar</span></button>
+      <button class="nav-btn" data-view="calendar"><i class="fa-solid fa-calendar-days"></i><span>Plan</span></button>
+      <button class="nav-btn" data-view="assistant"><i class="fa-solid fa-robot"></i><span>AI</span></button>
+    </nav>
+    <button id="themeBtn" class="nav-btn" aria-label="Byt tema"><i class="fa-solid fa-moon"></i><span>Tema</span></button>
+    <button id="logoutBtn" class="nav-btn"><i class="fa-solid fa-right-from-bracket"></i><span>Logga ut</span></button>
+  </aside>
+
+  <main id="main">
+    <!-- Topbar med nivå, XP och streak -->
+    <header class="topbar glass">
+      <h1 id="title" tabindex="-1">Dashboard</h1>
+      <div class="hud">
+        <div class="lvl"><b id="lvl">Nivå 1</b><div class="bar"><i id="xpBar"></i></div><small id="xpTxt"></small></div>
+        <span class="streak" title="Dagar i rad"><i class="fa-solid fa-fire"></i> <b id="streak">0</b></span>
+      </div>
+    </header>
+
+    <!-- Dashboard -->
+    <section id="dashboard" class="view active">
+      <div class="grid stats">
+        <div class="glass stat"><i class="fa-solid fa-clock"></i><b id="sToday">0</b><span>min idag</span></div>
+        <div class="glass stat"><i class="fa-solid fa-hourglass-half"></i><b id="sTotal">0</b><span>min totalt</span></div>
+        <div class="glass stat"><i class="fa-solid fa-clone"></i><b id="sCards">0</b><span>flashcards</span></div>
+        <div class="glass stat"><i class="fa-solid fa-note-sticky"></i><b id="sNotes">0</b><span>anteckningar</span></div>
+      </div>
+      <div class="grid two">
+        <div class="glass pad">
+          <h2>Dagens mål</h2>
+          <div class="bar big"><i id="goalBar"></i></div>
+          <p class="muted" id="goalTxt"></p>
+          <div class="timer"><span id="timerTxt">00:00</span>
+            <button class="btn" id="timerBtn"><i class="fa-solid fa-play"></i> Starta studiepass</button>
+            <button class="btn ghost" id="log10">+10 min</button></div>
+        </div>
+        <div class="glass pad"><h2>Senaste 7 dagarna</h2><div class="chartbox"><canvas id="weekChart" role="img" aria-label="Studietid per dag de senaste sju dagarna"></canvas></div></div>
+      </div>
+      <div class="grid two">
+        <div class="glass pad"><h2>Rekommendationer för dig</h2><ul id="recs" class="recs"></ul><p class="muted">Skapas lokalt utifrån din studiedata.</p></div>
+        <div class="glass pad"><h2>Anteckningar per kategori</h2><div class="chartbox"><canvas id="catChart" role="img" aria-label="Antal anteckningar per kategori"></canvas></div></div>
+      </div>
+      <div class="glass pad"><h2>Data</h2><div class="row" style="justify-content:flex-start;flex-wrap:wrap">
+        <button class="btn ghost" id="exportBtn"><i class="fa-solid fa-download"></i> Exportera</button>
+        <button class="btn ghost" id="importBtn"><i class="fa-solid fa-upload"></i> Importera</button>
+        <input type="file" id="importFile" accept="application/json" hidden></div></div>
+      <div class="glass pad"><h2>Badges</h2><div class="badges" id="badges"></div></div>
+    </section>
+
+    <!-- Flashcards -->
+    <section id="flashcards" class="view">
+      <div class="row"><p class="muted">Klicka på ett kort för att vända det.</p>
+        <button class="btn" id="addCard"><i class="fa-solid fa-plus"></i> Nytt kort</button></div>
+      <div class="grid cards" id="cardGrid"></div>
+      <dialog id="cardDlg" class="glass">
+        <form method="dialog" id="cardForm">
+          <h2 id="dlgTitle">Nytt kort</h2>
+          <input type="hidden" id="cardId">
+          <label>Fråga<textarea id="cardQ" required rows="2"></textarea></label>
+          <label>Svar<textarea id="cardA" required rows="3"></textarea></label>
+          <div class="row"><button type="button" class="btn ghost" id="cardCancel">Avbryt</button>
+            <button class="btn" type="submit">Spara kort</button></div>
+        </form>
+      </dialog>
+    </section>
+
+    <!-- Quiz -->
+    <section id="quiz" class="view"><div class="glass pad" id="quizBox"></div></section>
+
+    <!-- Anteckningar -->
+    <section id="notes" class="view">
+      <div class="notes-layout">
+        <div class="glass pad list">
+          <input id="search" type="search" placeholder="Sök anteckningar...">
+          <select id="catFilter"></select>
+          <button class="btn" id="newNote"><i class="fa-solid fa-plus"></i> Ny anteckning</button>
+          <div id="noteList"></div>
+        </div>
+        <div class="glass pad editor-wrap" id="editorWrap">
+          <input id="noteTitle" placeholder="Titel">
+          <input id="noteCat" placeholder="Kategori" list="cats">
+          <datalist id="cats"></datalist>
+          <div class="toolbar">
+            <button data-cmd="bold" title="Fet"><i class="fa-solid fa-bold"></i></button>
+            <button data-cmd="italic" title="Kursiv"><i class="fa-solid fa-italic"></i></button>
+            <button data-cmd="underline" title="Understruken"><i class="fa-solid fa-underline"></i></button>
+            <button data-cmd="formatBlock" data-val="h3" title="Rubrik"><i class="fa-solid fa-heading"></i></button>
+            <button data-cmd="insertUnorderedList" title="Lista"><i class="fa-solid fa-list-ul"></i></button>
+            <button id="delNote" title="Ta bort"><i class="fa-solid fa-trash"></i></button>
+            <span id="saveState" class="muted"></span>
+          </div>
+          <div id="editor" contenteditable="true"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Kalender -->
+    <section id="calendar" class="view">
+      <div class="glass pad">
+        <div class="row"><button class="btn ghost" id="calPrev" aria-label="Föregående månad"><i class="fa-solid fa-chevron-left"></i></button>
+          <h2 id="calTitle" aria-live="polite"></h2>
+          <button class="btn ghost" id="calNext" aria-label="Nästa månad"><i class="fa-solid fa-chevron-right"></i></button></div>
+        <div class="cal" id="calGrid"></div>
+      </div>
+      <div class="glass pad"><h2 id="dayTitle"></h2><ul id="dayList" class="recs"></ul>
+        <form id="evForm" class="row"><input id="evTitle" aria-label="Vad ska du plugga?" placeholder="Vad ska du plugga?" maxlength="60" required>
+          <input id="evMin" type="number" min="5" max="480" value="30" aria-label="Minuter" style="width:90px"><button class="btn">Planera pass</button></form></div>
+    </section>
+
+    <!-- AI-assistent -->
+    <section id="assistant" class="view">
+      <div class="glass chat">
+        <div id="msgs"></div>
+        <div class="chips">
+          <button>Sammanfatta mina anteckningar</button>
+          <button>Vad är fotosyntes?</button>
+          <button>Vad säger mina anteckningar om cellen?</button>
+        </div>
+        <form id="chatForm"><input id="chatIn" placeholder="Fråga något om dina anteckningar..." autocomplete="off">
+          <button class="btn" aria-label="Skicka"><i class="fa-solid fa-paper-plane"></i></button></form>
+      </div>
+    </section>
+  </main>
+  <div id="toast" class="toast glass" role="status" aria-live="polite"></div>
+  <script src="script.js"></script>
+</body>
+</html>
